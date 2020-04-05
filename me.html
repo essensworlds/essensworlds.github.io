@@ -1,0 +1,77 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>TELEPORT SHAKA EXAMPLE</title>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/shaka-player/2.2.5/shaka-player.compiled.debug.js"></script>
+</head>
+<body>
+<video id="video"
+       width="640"
+       muted
+       poster="//shaka-player-demo.appspot.com/assets/poster.jpg"
+       controls autoplay></video>
+
+<!--Подключение основного SDK-->
+<script src="https://cdn.teleport.media/stable/teleport.js"></script>
+<!--Подключение плагина для Shaka Player-->
+<script src="https://cdn.teleport.media/stable/teleport.shaka.js"></script>
+<!--Скрипт инициализации-->
+<script>
+    var tlprt;
+    var STREAM_URL = "http://hls.goodgame.ru/hls/147714.m3u8";
+    var API_KEY = "09HlU7zols0Lj924FgwW3/WLN/kUQ/mPLYJ01cxcN3k="
+    function initApp() {
+        shaka.polyfill.installAll();
+        var video = document.getElementById("video");
+        var player = new shaka.Player(video);
+        player.addEventListener("error", onErrorEvent);
+
+        // инициализируем экземпляр Teleport
+        teleport.initialize({
+                    apiKey: API_KEY,
+                    loader: {               // параметры интеграции с плеером
+                        type: "shaka",      // идентификатор плагина
+                        params: {
+                            player: player  // экземпляр плеера
+                        }
+                    }
+                })
+                .then(function (instance) {
+                    // запускаем плеер и сохраняем экземпляр teleport
+                    tlprt = instance;
+
+                    return player.load(manifestUri);
+                })
+                .then(function (instance) {
+                    tlprt = instance;
+
+                    // This runs if the asynchronous load is successful.
+                    console.log('The video has now been loaded!');
+                    // подписываемся за событие закрытия страницы, чтобы корректно освободить ресурсы
+                    window.addEventListener("unload", function () {
+                        if (tlprt) {
+                            tlprt.dispose();
+                            tlprt = null;
+                        }
+                    });
+                })
+                .catch(onError);
+    }
+
+    function onErrorEvent(event) {
+        // Extract the shaka.util.Error object from the event.
+        onError(event.detail);
+    }
+
+    function onError(error) {
+        // Log the error.
+        console.error("Error code", error.code, "object", error);
+    }
+
+    document.addEventListener("DOMContentLoaded", initApp);
+</script>
+</body>
+</html>
